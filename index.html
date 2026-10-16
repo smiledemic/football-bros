@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <!-- base must come first: every relative URL below resolves against it -->
+  <base href="https://cdn.jsdelivr.net/gh/bubbls/UGS-Assets@d7f8079f5d979182e04f05b1ade24f2a757253a3/football%20bros/">
+
+  <title>Football Bros</title>
+  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Online multiplayer football! Bone crushing hits, long bombs, and tons more!">
+  <meta name="keywords" content="Football, Play, Free, Online, Multiplayer, Games, IO, Sports, Scrolling, Friends">
+  <meta name="author" content="Blue Wizard Digital">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Football Bros">
+  <meta property="og:description" content="Online multiplayer football! Bone crushing hits, long bombs, and tons more!">
+
+  <link rel="shortcut icon" type="image/png" href="./favicon.png">
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      color: orange;
+    }
+
+    body::-webkit-scrollbar {
+      width: 0;
+    }
+
+    #openfl-content {
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+
+    /* Loading screen */
+    #loading {
+      position: absolute;
+      z-index: 15;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, 0);
+      background: #000;
+      text-align: center;
+    }
+
+    /* Info section under the game */
+    #more {
+      display: flex;
+      justify-content: space-between;
+      padding: 40px;
+      background-color: #1a1a1a;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    .info-box {
+      width: 48%;
+      padding: 20px;
+      background-color: #222;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    h3 {
+      margin-bottom: 15px;
+      font-size: 24px;
+      color: #ffa500;
+    }
+
+    p,
+    b {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    p {
+      margin-bottom: 10px;
+    }
+
+    b {
+      color: #ffd700;
+    }
+
+    a:link,
+    a:visited,
+    a:hover,
+    a:active {
+      color: #ffd700;
+    }
+
+    footer {
+      margin-top: 40px;
+      padding: 20px 0;
+      background-color: #000;
+      border: 0;
+      color: #ccc;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    /* Bug report form */
+    .feedback-form {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50vw;
+      height: 50vh;
+      padding: 20px;
+      background-color: #2A6DB0;
+      border: 4px solid #FF0000;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      color: #fff;
+      text-align: center;
+    }
+
+    .feedback-form h3 {
+      margin-bottom: 20px;
+      font-size: 24px;
+      color: #fff;
+      text-shadow: 2px 2px #000;
+    }
+
+    .feedback-form textarea {
+      box-sizing: border-box;
+      width: calc(100% - 20px);
+      height: 50%;
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: #000;
+      border: 3px solid #000;
+      color: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 16px;
+      resize: none;
+    }
+
+    .feedback-form button {
+      width: 100%;
+      padding: 12px;
+      background-color: #FFD700;
+      border: 3px solid #FF0000;
+      border-radius: 0;
+      color: #000;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 18px;
+      text-shadow: 1px 1px #000;
+      cursor: pointer;
+    }
+
+    .feedback-form button:hover {
+      background-color: #FFB800;
+      color: #fff;
+    }
+  </style>
+
+  <!-- Game engine -->
+  <script src="https://cdn.jsdelivr.net/gh/bubbls/UGS-Assets@main/FootballBros.js"></script>
+
+  <!-- Firebase (login + cloud saves) -->
+  <script src="firebase-app.js"></script>
+  <script src="firebase-auth.js"></script>
+  <script src="firebase-firestore.js"></script>
+
+  <!-- Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GREB63PWEL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+    gtag('js', new Date());
+
+    if (location.hostname != "localhost") {
+      gtag('config', 'G-GREB63PWEL', {
+        cookie_flags: 'secure;samesite=none'
+      });
+    }
+  </script>
+
+  <script>
+    // Block page scroll on touch, and keep the keys the game uses from scrolling the page
+    window.addEventListener("touchmove", function (event) {
+      event.preventDefault();
+    }, {
+      capture: false,
+      passive: false
+    });
+
+    if (typeof window.devicePixelRatio != 'undefined' && window.devicePixelRatio > 2) {
+      document.getElementById("viewport").setAttribute(
+        'content',
+        'width=device-width, initial-scale=' + (2 / window.devicePixelRatio) + ', user-scalable=no'
+      );
+    }
+
+    window.addEventListener('keydown', function (e) {
+      if ((e.keyCode == 32 || e.keyCode == 38 || e.keyCode == 40 || e.keyCode == 9) && e.target == document.body) {
+        e.preventDefault();
+      }
+    });
+
+    var aCo = 'US';
+  </script>
+
+  <!--
+    Ad hooks. The game still calls these, so they stay defined, but they are
+    stubs now: no ad network is loaded, and the "done" callbacks fire right
+    away so the game never waits on an ad.
+  -->
+  <script>
+    function LoadVideo() {}
+
+    function ShowVideo() {
+      Main.DoneVideoAd(true);
+    }
+
+    function ShowAdBreak() {
+      Main.DoneInterstitialAd(true);
+    }
+
+    function ShowAd1() {}
+    function ShowAd2() {}
+    function ShowAd3() {}
+    function ShowAd4() {}
+    function ShowAd6() {}
+    function ShowAd7() {}
+    function ShowAd8() {}
+    function ShowAd9() {}
+  </script>
+
+  <!-- Firebase setup -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAFCwYdbkLozIgtH5zuGydcjk_LNhYnve0",
+      authDomain: "football-bros-8f1b3.firebaseapp.com",
+      projectId: "football-bros-8f1b3",
+      storageBucket: "football-bros-8f1b3.appspot.com",
+      messagingSenderId: "807434051106",
+      appId: "1:807434051106:web:7e2fd59782e7c13165f47b"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    var userData = "";
+
+    function triggerSignIn() {
+      var provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider);
+    }
+
+    function saveGameData(gameData) {
+      console.log('saving gamedata:' + gameData);
+      var userId = auth.currentUser.uid;
+      userData = gameData;
+      db.collection('users').doc(userId).set({
+        gameData: gameData
+      }).then(function () {
+        console.log('Game data saved');
+      }).catch(function (error) {
+        console.error('Error saving game data:', error);
+      });
+    }
+
+    function loadGameData() {
+      return userData;
+    }
+
+    function loadGameDataAsync() {
+      var userId = auth.currentUser.uid;
+      db.collection('users').doc(userId).get().then(function (doc) {
+        if (doc.exists) {
+          userData = doc.data().gameData;
+          console.log('Game data:', doc.data().gameData);
+          if (typeof Main != "undefined") {
+            Main.LoadDataComplete();
+          }
+        } else {
+          console.log('No such document!');
+        }
+      }).catch(function (error) {
+        console.error('Error loading game data:', error);
+      });
+    }
+
+    auth.onAuthStateChanged(function (user) {
+      if (user) {
+        loadGameDataAsync();
+        SendEvent('event', 'sign_in');
+        console.log('user signed in');
+      } else {
+        console.log('No user signed in');
+        SendEvent('event', 'sign_out');
+      }
+    });
+
+    function signOut() {
+      auth.signOut().then(function () {
+        Main.SignOutComplete();
+        console.log('signed out');
+      });
+    }
+
+    function isUserLoggedIn() {
+      return auth.currentUser !== null;
+    }
+  </script>
+</head>
+
+<body style="overflow: hidden;">
+  <noscript>Enable JavaScript bro!</noscript>
+
+  <!-- Strip "www." from the address, carrying saved data across via POST -->
+  <script>
+    var url = window.location.href;
+    if (url.includes("www.")) {
+      url = url.replace("www.", "");
+
+      var f = document.createElement('form');
+      f.action = url;
+      f.method = 'POST';
+      var i = document.createElement('input');
+      i.type = 'hidden';
+      i.name = 'FGlobals';
+      i.value = localStorage.getItem("/:Globals");
+      f.appendChild(i);
+
+      document.body.appendChild(f);
+      f.submit();
+    } else {
+      var aPost = "";
+      var aStorage = localStorage.getItem("/:Globals");
+      var aLen = 0;
+      if (aStorage != null && aStorage.length > 0) {
+        aLen = aStorage.length;
+      }
+      if (aPost.length > aLen) localStorage.setItem("/:Globals", aPost);
+      if (aPost.length > 0 && aPost.length == aLen) localStorage.setItem("/:Globals", aPost);
+    }
+  </script>
+
+  <div id="loading">
+    <img src="assets/loading4.png" alt=""><br>
+    <img src="assets/fbro.png" alt="">
+    <img src="assets/sbro.png" alt="">
+    <img src="assets/wbro.png" alt="">
+    <img src="assets/bbro.png" alt="">
+  </div>
+
+  <div id="game2" style="width: 100%; height: 100%;">
+    <div id="openfl-content" onblur="window.focus();" style="width: 100%; float: left;">
+      <script>
+        lime.embed("FootballBros", "openfl-content", 0, 0, {
+          parameters: {}
+        });
+      </script>
+    </div>
+
+    <div id="preroll" style="width: 960px; height: 540px; display: none; position: absolute; top: 50%; left: 50%; z-index: 100; transform: translate(-50%, -50%);"></div>
+
+    <div class="feedback-form" id="feedbackForm" style="display: none;">
+      <h3>Report a Bug/Glitch</h3>
+      <textarea id="feedback" placeholder="Describe the bug or glitch with a lot of details, like how to make the glitch happen and anything else whether it seems useful or not..."></textarea>
+      <textarea id="email" placeholder="Email address (optional)" style="height: 50px;"></textarea>
+      <textarea id="discord" placeholder="Discord ID (optional)" style="height: 50px;"></textarea>
+      <button onclick="sendFeedback()" id="submitBtn">Submit Feedback</button>
+      <br><br>
+      <button onclick="document.getElementById('feedbackForm').style.display = 'none'" id="cancelBtn">Cancel</button>
+      <p id="responseMsg"></p>
+    </div>
+
+    <script>
+      function getOSFromUserAgent() {
+        const userAgent = navigator.userAgent;
+        const platform = navigator.platform;
+
+        if (/Windows NT/i.test(userAgent)) return 'Windows';
+        if (/Mac OS X/i.test(userAgent)) return 'macOS';
+        if (/Linux/i.test(userAgent)) return 'Linux';
+        if (/Android/i.test(userAgent)) return 'Android';
+        if (/iPhone|iPad|iPod/i.test(userAgent)) return 'iOS';
+        if (/CrOS/i.test(userAgent)) return 'Chrome OS';
+
+        return platform || 'Unknown';
+      }
+
+      async function sendFeedback() {
+        var feedback = '*' + document.getElementById("feedback").value.trim() + '*';
+        var email = document.getElementById("email").value.trim();
+        var discord = document.getElementById("discord").value.trim();
+        const screenResolution = `${window.screen.width}x${window.screen.height}`;
+        const windowResolution = `${window.innerWidth}x${window.innerHeight}`;
+        var aOS = getOSFromUserAgent();
+        var aCity = 'Provo';
+        const hostname = window.location.hostname;
+        const gpu = (() => {
+          const canvas = document.createElement('canvas');
+          const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+          const debugInfo = gl?.getExtension('WEBGL_debug_renderer_info');
+          const gpuInfo = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'Unknown';
+          canvas.remove();
+          return gpuInfo;
+        })();
+
+        feedback = feedback + '\nDomain: ' + hostname;
+        feedback = feedback + ', OS: ' + aOS;
+        feedback = feedback + ', Screen res: ' + screenResolution;
+        feedback = feedback + ', Window res: ' + windowResolution;
+        feedback = feedback + ', GPU: ' + gpu;
+        feedback = feedback + ', City: ' + aCity;
+        feedback = feedback + ', Email: ' + email;
+        feedback = feedback + ', Discord: ' + discord;
+
+        const responseMsg = document.getElementById("responseMsg");
+        const submitBtn = document.getElementById("submitBtn");
+
+        if (!feedback) {
+          alert("Please enter feedback.");
+          return;
+        }
+
+        submitBtn.disabled = true;
+        responseMsg.textContent = "Submitting...";
+
+        try {
+          const response = await fetch("sendFeedback.php", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+              feedback: feedback
+            })
+          });
+
+          const result = await response.json();
+
+          document.getElementById("feedbackForm").style.display = "none";
+          alert(result.message);
+        } catch (error) {
+          document.getElementById("feedbackForm").style.display = "none";
+          alert("Error submitting feedback. Please try again.");
+        }
+
+        submitBtn.disabled = false;
+      }
+    </script>
+  </div>
+
+  <br>
+
+  <div tabindex="-1" id="more">
+    <div class="info-box">
+      <h3>About Football Bros</h3>
+      <p>Alt url: www.dunk.monster. Football Bros is a simple, fast-paced football game with all kinds of crazy action! With online multiplayer gameplay, lots of plays, and all kinds of crazy football action!</p>
+      <p>The controls are very simple: Use either the arrow keys or WASD to control your bro. Space bar will throw a pass, dive, or stiff arm, depending on the situation.</p>
+      <p>Be sure to follow us on social media for the latest updates and info!</p>
+      <br>
+      <h3>Changelog (1/30/2024)</h3>
+      <p>Added Sayjuan to Philly.</p>
+      <p>Changed play selection to a horizontal strip to fit on more screens.</p>
+      <p>Fixed stuck moving in a direction once a play starts.</p>
+      <p>Fixed "1 wins away" grammar.</p>
+      <p>Fixed punts so kicking team doesnt crowd around the ball.</p>
+      <p>Fixed punts so that kicking team couldn't catch a kick on the fly and get a 1st down.</p>
+      <p>Fixed posession on 2 pt conversions.</p>
+      <p>Fixed diving into a snapped ball so you can't start diving until the qb actually has the ball.</p>
+      <p>Fixed glitch where sometimes a kickoff/xp would show up when it wasn't supposed to when a td was scored right at 0:00 of the 1st half.</p>
+      <p>Added blue wizard logo.</p>
+      <p>Added 5 new plays that are unlocked as perks.</p>
+    </div>
+
+    <div class="info-box">
+      <h3>FAQ</h3>
+      <b>Why isn't the game loading?</b>
+      <p>You should check your internet connection and make sure our site isn't blocked. Also, disable all ad blockers.</p>
+      <b>How do I play?</b>
+      <p>Use your arrow keys and space bar! The rest is easy- pick your play and go!</p>
+      <b>Which browser should I use?</b>
+      <p>You should use Chrome. It is the only browser guaranteed to work. Football Bros has also been tested to work on Firefox and Safari, but not guaranteed.</p>
+      <b>Are there more Bros games?</b>
+      <p>Yes! Check out <a tabindex="-1" href="">Basket Bros</a>, <a tabindex="-1" href="">Soccer Bros</a> and <a tabindex="-1" href="https://wrestlebros.io">Wrestle Bros</a>. Also be sure to check out <a tabindex="-1" href="https://iogames.space" target="_blank">IO Games at iogames.space</a></p>
+      <b>Do you have a favorite team?</b>
+      <p>Yes, but we're not saying which one. Drop us an e-mail if you think you know.</p>
+      <b>I'm blocked, where else can i play?</b>
+      <p>Check here, these links work for both football and basket bros: <a href="">Football Bros Unblocked</a></p>
+    </div>
+  </div>
+
+  <footer>
+    <div tabindex="-1" class="footer-links">
+      <a href="">Copyright 2024 Blue Wizard Digital</a> |
+      <a tabindex="-1" href="">Terms of Service</a> |
+      <a tabindex="-1" href="">Privacy Policy</a>
+    </div>
+  </footer>
+
+  <script>
+    // Analytics events
+    var sid = 'dnq3hin5g67igk2rb6viv78pd1';
+
+    function updateStatus(fromEvent = false) {
+      const req = new XMLHttpRequest();
+      var aStr = "recordsession.php?s=" + sid;
+      if (fromEvent == true) aStr = aStr + "&e=1";
+      req.open("GET", aStr);
+      req.send();
+    }
+
+    function SendEvent(theEvent, theAction, theParms = '') {
+      if (theParms == '') {
+        gtag(theEvent, theAction);
+      } else {
+        gtag(theEvent, theAction, theParms);
+      }
+      updateStatus(true);
+    }
+
+    updateStatus(true);
+
+    // Hooks the game calls (no-ops when the SDK they belong to isn't present)
+    function SetCGInviteLink() {
+      if (typeof gCrazySDK !== 'undefined') {
+        var meta = document.getElementById("cglink");
+        var aCGLink = gCrazySDK.inviteLink({
+          roomId: meta.value.slice(-8)
+        });
+        meta.value = aCGLink;
+        meta.select();
+        document.execCommand('Copy');
+        console.log("COPIED CG URL");
+      }
+    }
+
+    function EmailSignup() {
+      if (document.getElementById("signup") || document.getElementById("deleteme")) return;
+      const iframe = document.createElement("iframe");
+      iframe.src = "";
+      iframe.style.width = "550px";
+      iframe.style.height = (window.innerHeight - 100) + "px";
+      iframe.style.position = "absolute";
+      iframe.style.top = "50px";
+      iframe.style.left = "50%";
+      iframe.style.marginLeft = "-225px";
+      iframe.style.maxWidth = "100%";
+      iframe.setAttribute("id", "signup");
+      document.body.appendChild(iframe);
+    }
+
+    function GamePlayStart() {
+      if (typeof gCrazySDK !== 'undefined') {
+        console.log("GamePlayStart");
+        gCrazySDK.gameplayStart();
+      }
+    }
+
+    function GamePlayStop() {
+      if (typeof gCrazySDK !== 'undefined') {
+        console.log("GamePlayStop");
+        gCrazySDK.gameplayStop();
+      }
+    }
+
+    function HappyTime() {
+      if (typeof gCrazySDK !== 'undefined') {
+        console.log("happytime");
+        gCrazySDK.happytime();
+      }
+    }
+
+    // Let the mouse wheel scroll the page even while over the game
+    function doScroll(event) {
+      window.scroll(0, window.scrollY + event.deltaY);
+    }
+
+    document.getElementById("openfl-content").addEventListener("wheel", doScroll);
+    document.getElementById("more").addEventListener("wheel", doScroll);
+
+    // Keep keyboard focus on the game, not on stray iframes
+    setInterval(function () {
+      if (document.activeElement.tagName == "IFRAME") {
+        document.activeElement.blur();
+        document.getElementById('openfl-content').focus();
+      }
+    }, 30);
+
+    const gameElement = document.getElementById('openfl-content');
+
+    function keepFocus() {
+      gameElement.focus();
+    }
+    gameElement.addEventListener('blur', keepFocus);
+    gameElement.addEventListener('focusout', keepFocus);
+  </script>
+</body>
+
+</html>
